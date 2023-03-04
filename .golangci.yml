@@ -1,0 +1,32 @@
+# This file contains configuration options for GolangCI-Lint.
+# - Available linters see: https://golangci-lint.run/usage/linters/
+# - Sample of config see: https://golangci-lint.run/usage/configuration/#config-file
+
+# options for analysis running
+run:
+  tests: true
+  fast: true
+  build-tags:
+    - golangci
+  skip-dirs:
+    - .github
+  allow-parallel-runners: true
+
+output:
+  format: colored-line-number
+  sort-results: true
+
+linters:
+  enable-all: true
+  disable:
+  # Deprecated linters
+  - exhaustivestruct
+  - nosnakecase
+  - ifshort
+  - interfacer
+  - scopelint
+  - deadcode
+  - structcheck
+  - golint
+  - maligned
+  - varcheck

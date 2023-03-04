@@ -1,3 +1,4 @@
+//go:build go1.7
 // +build go1.7
 
 package errors
@@ -13,6 +14,7 @@ func noErrors(at, depth int) error {
 	if at >= depth {
 		return stderrors.New("no error")
 	}
+
 	return noErrors(at+1, depth)
 }
 
@@ -20,6 +22,7 @@ func yesErrors(at, depth int) error {
 	if at >= depth {
 		return New("ye error")
 	}
+
 	return yesErrors(at+1, depth)
 }
 
@@ -32,6 +35,7 @@ func BenchmarkErrors(b *testing.B) {
 		stack int
 		std   bool
 	}
+
 	runs := []run{
 		{10, false},
 		{10, true},
@@ -40,22 +44,30 @@ func BenchmarkErrors(b *testing.B) {
 		{1000, false},
 		{1000, true},
 	}
+
 	for _, r := range runs {
 		part := "pkg/errors"
 		if r.std {
 			part = "errors"
 		}
+
 		name := fmt.Sprintf("%s-stack-%d", part, r.stack)
+
 		b.Run(name, func(b *testing.B) {
 			var err error
+
 			f := yesErrors
 			if r.std {
 				f = noErrors
 			}
+
 			b.ReportAllocs()
+			b.ResetTimer()
+
 			for i := 0; i < b.N; i++ {
 				err = f(0, r.stack)
 			}
+
 			b.StopTimer()
 			GlobalE = err
 		})
@@ -67,6 +79,7 @@ func BenchmarkStackFormatting(b *testing.B) {
 		stack  int
 		format string
 	}
+
 	runs := []run{
 		{10, "%s"},
 		{10, "%v"},
@@ -80,29 +93,38 @@ func BenchmarkStackFormatting(b *testing.B) {
 	}
 
 	var stackStr string
+
 	for _, r := range runs {
 		name := fmt.Sprintf("%s-stack-%d", r.format, r.stack)
+
 		b.Run(name, func(b *testing.B) {
 			err := yesErrors(0, r.stack)
+
 			b.ReportAllocs()
 			b.ResetTimer()
+
 			for i := 0; i < b.N; i++ {
 				stackStr = fmt.Sprintf(r.format, err)
 			}
+
 			b.StopTimer()
 		})
 	}
 
 	for _, r := range runs {
 		name := fmt.Sprintf("%s-stacktrace-%d", r.format, r.stack)
+
 		b.Run(name, func(b *testing.B) {
 			err := yesErrors(0, r.stack)
 			st := err.(*fundamental).stack.StackTrace()
+
 			b.ReportAllocs()
 			b.ResetTimer()
+
 			for i := 0; i < b.N; i++ {
 				stackStr = fmt.Sprintf(r.format, st)
 			}
+
 			b.StopTimer()
 		})
 	}
