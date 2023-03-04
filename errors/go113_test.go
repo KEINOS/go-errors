@@ -1,20 +1,19 @@
-// +build go1.13
-
 package errors
 
 import (
 	stderrors "errors"
 	"fmt"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestErrorChainCompat(t *testing.T) {
 	err := stderrors.New("error that gets wrapped")
 	wrapped := Wrap(err, "wrapped up")
-	if !stderrors.Is(wrapped, err) {
-		t.Errorf("Wrap does not support Go 1.13 error chains")
-	}
+
+	require.ErrorIs(t, wrapped, err,
+		"Wrap should support error chains since from Go 1.13")
 }
 
 func TestIs(t *testing.T) {
@@ -62,11 +61,15 @@ func TestIs(t *testing.T) {
 			want: true,
 		},
 	}
-	for _, tt := range tests {
+
+	for index, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := Is(tt.args.err, tt.args.target); got != tt.want {
-				t.Errorf("Is() = %v, want %v", got, tt.want)
-			}
+			expect := tt.want
+			actual := Is(tt.args.err, tt.args.target)
+
+			require.Equal(t, expect, actual,
+				"test #%d faild: Is('%v', '%v') did not return as expected",
+				index+1, tt.args.err, tt.args.target)
 		})
 	}
 }
@@ -122,16 +125,17 @@ func TestAs(t *testing.T) {
 			want: true,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := As(tt.args.err, tt.args.target); got != tt.want {
-				t.Errorf("As() = %v, want %v", got, tt.want)
-			}
+			expect := tt.want
+			actual := As(tt.args.err, tt.args.target)
+
+			require.Equal(t, expect, actual)
 
 			ce := tt.args.target.(*customErr)
-			if !reflect.DeepEqual(err, *ce) {
-				t.Errorf("set target error failed, target error is %v", *ce)
-			}
+			require.Equal(t, err, *ce,
+				"set target error failed, target error is %v", *ce)
 		})
 	}
 }
@@ -142,6 +146,7 @@ func TestUnwrap(t *testing.T) {
 	type args struct {
 		err error
 	}
+
 	tests := []struct {
 		name string
 		args args
@@ -168,11 +173,12 @@ func TestUnwrap(t *testing.T) {
 			want: err,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := Unwrap(tt.args.err); !reflect.DeepEqual(err, tt.want) {
-				t.Errorf("Unwrap() error = %v, want %v", err, tt.want)
-			}
+			err := Unwrap(tt.args.err)
+
+			require.Equal(t, tt.want, err)
 		})
 	}
 }

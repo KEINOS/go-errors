@@ -25,7 +25,9 @@ func (f Frame) file() string {
 	if fn == nil {
 		return "unknown"
 	}
+
 	file, _ := fn.FileLine(f.pc())
+
 	return file
 }
 
@@ -36,7 +38,9 @@ func (f Frame) line() int {
 	if fn == nil {
 		return 0
 	}
+
 	_, line := fn.FileLine(f.pc())
+
 	return line
 }
 
@@ -46,39 +50,40 @@ func (f Frame) name() string {
 	if fn == nil {
 		return "unknown"
 	}
+
 	return fn.Name()
 }
 
 // Format formats the frame according to the fmt.Formatter interface.
 //
-//    %s    source file
-//    %d    source line
-//    %n    function name
-//    %v    equivalent to %s:%d
+//	%s    source file
+//	%d    source line
+//	%n    function name
+//	%v    equivalent to %s:%d
 //
 // Format accepts flags that alter the printing of some verbs, as follows:
 //
-//    %+s   function name and path of source file relative to the compile time
-//          GOPATH separated by \n\t (<funcname>\n\t<path>)
-//    %+v   equivalent to %+s:%d
+//	%+s   function name and path of source file relative to the compile time
+//	      GOPATH separated by \n\t (<funcname>\n\t<path>)
+//	%+v   equivalent to %+s:%d
 func (f Frame) Format(s fmt.State, verb rune) {
 	switch verb {
 	case 's':
 		switch {
 		case s.Flag('+'):
-			io.WriteString(s, f.name())
-			io.WriteString(s, "\n\t")
-			io.WriteString(s, f.file())
+			panicOnWriteErr(io.WriteString(s, f.name()))
+			panicOnWriteErr(io.WriteString(s, "\n\t"))
+			panicOnWriteErr(io.WriteString(s, f.file()))
 		default:
-			io.WriteString(s, path.Base(f.file()))
+			panicOnWriteErr(io.WriteString(s, path.Base(f.file())))
 		}
 	case 'd':
-		io.WriteString(s, strconv.Itoa(f.line()))
+		panicOnWriteErr(io.WriteString(s, strconv.Itoa(f.line())))
 	case 'n':
-		io.WriteString(s, funcname(f.name()))
+		panicOnWriteErr(io.WriteString(s, funcname(f.name())))
 	case 'v':
 		f.Format(s, 's')
-		io.WriteString(s, ":")
+		panicOnWriteErr(io.WriteString(s, ":"))
 		f.Format(s, 'd')
 	}
 }
@@ -98,19 +103,19 @@ type StackTrace []Frame
 
 // Format formats the stack of Frames according to the fmt.Formatter interface.
 //
-//    %s	lists source files for each Frame in the stack
-//    %v	lists the source file and line number for each Frame in the stack
+//	%s	lists source files for each Frame in the stack
+//	%v	lists the source file and line number for each Frame in the stack
 //
 // Format accepts flags that alter the printing of some verbs, as follows:
 //
-//    %+v   Prints filename, function, and line number for each Frame in the stack.
+//	%+v   Prints filename, function, and line number for each Frame in the stack.
 func (st StackTrace) Format(s fmt.State, verb rune) {
 	switch verb {
 	case 'v':
 		switch {
 		case s.Flag('+'):
 			for _, f := range st {
-				io.WriteString(s, "\n")
+				panicOnWriteErr(io.WriteString(s, "\n"))
 				f.Format(s, verb)
 			}
 		case s.Flag('#'):
@@ -126,14 +131,17 @@ func (st StackTrace) Format(s fmt.State, verb rune) {
 // formatSlice will format this StackTrace into the given buffer as a slice of
 // Frame, only valid when called with '%s' or '%v'.
 func (st StackTrace) formatSlice(s fmt.State, verb rune) {
-	io.WriteString(s, "[")
+	panicOnWriteErr(io.WriteString(s, "["))
+
 	for i, f := range st {
 		if i > 0 {
-			io.WriteString(s, " ")
+			panicOnWriteErr(io.WriteString(s, " "))
 		}
+
 		f.Format(s, verb)
 	}
-	io.WriteString(s, "]")
+
+	panicOnWriteErr(io.WriteString(s, "]"))
 }
 
 // stack represents a stack of program counters.
@@ -162,16 +170,22 @@ func (s *stack) StackTrace() StackTrace {
 
 func callers() *stack {
 	const depth = 32
+
 	var pcs [depth]uintptr
+
 	n := runtime.Callers(3, pcs[:])
+
 	var st stack = pcs[0:n]
+
 	return &st
 }
 
 // funcname removes the path prefix component of a function's name reported by func.Name().
 func funcname(name string) string {
 	i := strings.LastIndex(name, "/")
+
 	name = name[i+1:]
 	i = strings.Index(name, ".")
+
 	return name[i+1:]
 }

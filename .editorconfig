@@ -1,0 +1,26 @@
+# -----------------------------------------------------------------------------
+#  Editor settings
+# -----------------------------------------------------------------------------
+
+[*]
+indent_style = space
+indent_size = 4
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.go]
+indent_style = tab
+indent_size = 4
+
+# Shell-format -i=4 -ci -bn -kp -ln=sh
+[*.sh]
+indent_style       = space # shfmt -i=4
+indent_size        = 4     # shfmt -i=4
+shell_variant      = sh    # shfmt -ln=sh
+binary_next_line   = true  # shfmt -bn
+switch_case_indent = true  # shfmt -ci
+space_redirects    = false # disable shfmt -sr
+keep_padding       = true  # shfmt -kp
+function_next_line = false # disable shfmt -fn
